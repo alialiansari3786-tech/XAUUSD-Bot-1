@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bearish",
+    "entry": 4368.10009765625,
+    "sl": 4382.771414620535,
+    "tp": 4338.757463727679,
+    "timestamp": 1788338820.4100933
+  }
+]
