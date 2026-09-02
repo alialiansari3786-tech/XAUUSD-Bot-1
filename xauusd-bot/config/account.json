@@ -1,5 +1,0 @@
-{
-  "account_balance_usd": 1000,
-  "risk_percent_per_trade": 2.0,
-  "_comment": "Edit account_balance_usd whenever your balance changes."
-}
