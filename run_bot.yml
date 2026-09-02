@@ -1,0 +1,39 @@
+name: XAUUSD Setup Scanner
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub Actions cron uses UTC.
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}   # lets you manually trigger a run from the Actions tab
+
+permissions:
+  contents: write   # needed to commit the updated alert_state.json back
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run setup scanner
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m src.main
+
+      - name: Commit updated alert state
+        run: |
+          git config user.name "xauusd-bot"
+          git config user.email "actions@github.com"
+          git add state/alert_state.json
+          git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
+          git push
