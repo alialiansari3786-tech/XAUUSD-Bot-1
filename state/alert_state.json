@@ -94,5 +94,21 @@
     "sl": 4386.400251116072,
     "tp": 4354.899204799107,
     "timestamp": 1788350655.2046046
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bullish",
+    "entry": 4384.89990234375,
+    "sl": 4346.00714983259,
+    "tp": 4462.685407366071,
+    "timestamp": 1788352245.228929
+  },
+  {
+    "method": "Method 3 (Liquidity + Structure)",
+    "direction": "bullish",
+    "entry": 4347.7998046875,
+    "sl": 4340.600062779018,
+    "tp": 4391.0,
+    "timestamp": 1788352527.9921126
   }
 ]
