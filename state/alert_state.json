@@ -510,5 +510,13 @@
     "sl": 4523.10009765625,
     "tp": 4539.900390625,
     "timestamp": 1788461608.818563
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bullish",
+    "entry": 4524.5,
+    "sl": 4523.10009765625,
+    "tp": 4527.2998046875,
+    "timestamp": 1788462229.885577
   }
 ]
