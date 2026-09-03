@@ -2,30 +2,6 @@
   {
     "method": "Method 2 (Monthly-Daily-Hourly-5m)",
     "direction": "bearish",
-    "entry": 4368.10009765625,
-    "sl": 4382.771414620535,
-    "tp": 4338.757463727679,
-    "timestamp": 1788338820.4100933
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
-    "entry": 4362.89990234375,
-    "sl": 4383.092808314732,
-    "tp": 4322.514090401786,
-    "timestamp": 1788339840.0809903
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
-    "entry": 4360.2998046875,
-    "sl": 4383.271344866072,
-    "tp": 4314.356724330357,
-    "timestamp": 1788341111.3136625
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
     "entry": 4352.7001953125,
     "sl": 4383.307094029018,
     "tp": 4291.486397879464,
@@ -470,5 +446,13 @@
     "sl": 4458.714425223215,
     "tp": 4535.770856584821,
     "timestamp": 1788424703.3084826
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bullish",
+    "entry": 4483.89990234375,
+    "sl": 4465.171665736607,
+    "tp": 4521.356375558036,
+    "timestamp": 1788427564.6411266
   }
 ]
