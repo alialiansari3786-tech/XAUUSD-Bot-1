@@ -598,5 +598,21 @@
     "sl": 4456.642647879465,
     "tp": 4526.399956597223,
     "timestamp": 1788508694.6590278
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bearish",
+    "entry": 4530.10009765625,
+    "sl": 4544.92839704241,
+    "tp": 3962.5,
+    "timestamp": 1788508993.8015819
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bearish",
+    "entry": 4530.2998046875,
+    "sl": 4542.228271484375,
+    "tp": 4506.44287109375,
+    "timestamp": 1788509041.3644154
   }
 ]
