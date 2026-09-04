@@ -606,5 +606,21 @@
     "sl": 4457.757080078125,
     "tp": 4543.38525390625,
     "timestamp": 1788539131.5251648
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bearish",
+    "entry": 4483.5,
+    "sl": 4539.850062779018,
+    "tp": 3962.5,
+    "timestamp": 1788539738.920228
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bullish",
+    "entry": 4482.10009765625,
+    "sl": 4457.792724609375,
+    "tp": 4530.71484375,
+    "timestamp": 1788539788.6081467
   }
 ]
