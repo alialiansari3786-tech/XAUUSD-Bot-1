@@ -2,14 +2,6 @@
   {
     "method": "Method 2 (Monthly-Daily-Hourly-5m)",
     "direction": "bullish",
-    "entry": 4433.0,
-    "sl": 4423.478759765625,
-    "tp": 4452.04248046875,
-    "timestamp": 1788395735.922944
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bullish",
     "entry": 4444.7998046875,
     "sl": 4421.964076450893,
     "tp": 4490.471261160714,
@@ -510,5 +502,29 @@
     "sl": 4508.27849469866,
     "tp": 4526.2998046875,
     "timestamp": 1788479754.1645114
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bullish",
+    "entry": 4528.39990234375,
+    "sl": 4513.064453125,
+    "tp": 4667.7001953125,
+    "timestamp": 1788483280.9156735
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bullish",
+    "entry": 4528.2001953125,
+    "sl": 4519.0,
+    "tp": 4546.6005859375,
+    "timestamp": 1788483327.6555984
+  },
+  {
+    "method": "Method 3 (Liquidity + Structure)",
+    "direction": "bullish",
+    "entry": 4517.7001953125,
+    "sl": 4513.01447405134,
+    "tp": 4529.89990234375,
+    "timestamp": 1788483608.7054327
   }
 ]
