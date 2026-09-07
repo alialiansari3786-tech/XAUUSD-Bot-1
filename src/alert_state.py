@@ -5,11 +5,15 @@ Actions runs are stateless (fresh checkout every time), state is persisted
 to a JSON file IN THE REPO, which the workflow commits back after each run.
 
 A setup is considered "the same" as a previous alert if it matches on
-method + direction + entry/SL/TP all within a small tolerance (prices can
-drift slightly between runs while still being "the same" setup). Once
-sent, a setup won't re-alert unless its levels move meaningfully, or until
-it expires (default 24h) - after which a still-valid setup can alert again
-since enough time has passed that it may represent a fresh opportunity.
+method + direction, AND EITHER falls within COOLDOWN_MINUTES of the last
+alert for that method+direction (regardless of small price drift), OR its
+entry/SL/TP are within PRICE_TOLERANCE_PCT of a still-fresh prior alert.
+Real live testing found the original 0.1% tolerance alone let 64 near-
+duplicate alerts through over 3 days (same underlying setup, price drifted
+slightly more than 0.1% within 15-30 min during a trending session) -
+the cooldown catches "same setup, marginally restated" that a pure price
+comparison misses, while still letting genuinely new setups (bigger price
+move, or enough time passed) through.
 """
 
 import json
@@ -17,7 +21,8 @@ import os
 import time
 
 STATE_PATH = os.path.join(os.path.dirname(__file__), "..", "state", "alert_state.json")
-PRICE_TOLERANCE_PCT = 0.001   # 0.1% - setups within this are "the same" setup
+PRICE_TOLERANCE_PCT = 0.004    # 0.4% - widened from 0.1%, which was too tight for gold's normal short-term drift
+COOLDOWN_MINUTES = 60          # no re-alert for the same method+direction within this window, regardless of small price drift
 EXPIRY_SECONDS = 24 * 60 * 60  # re-allow alerting the same setup after 24h
 
 
@@ -49,11 +54,21 @@ def _prune_expired(state: list) -> list:
 
 
 def already_alerted(method: str, direction: str, entry: float, sl: float, tp: float) -> bool:
-    """Checks whether a matching setup was already alerted recently."""
+    """
+    Checks whether a matching setup was already alerted recently - either
+    within the cooldown window (regardless of small price drift) or with
+    prices close enough to count as the same setup even outside cooldown.
+    """
     state = _prune_expired(_load_state())
+    now = time.time()
     for s in state:
         if s["method"] != method or s["direction"] != direction:
             continue
+
+        within_cooldown = (now - s["timestamp"]) < (COOLDOWN_MINUTES * 60)
+        if within_cooldown:
+            return True
+
         if _prices_match(s["entry"], entry) and _prices_match(s["sl"], sl) and _prices_match(s["tp"], tp):
             return True
     return False

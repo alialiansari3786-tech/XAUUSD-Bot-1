@@ -19,7 +19,25 @@ real Fib-pullback logic is built (see methods.py TODO).
 
 from src.methods import run_method_1, run_method_2
 from src.method3 import run_method_3
-from src.data_feed import get_candles
+from src.data_feed import get_candles, sanity_check_against_daily_range
+
+
+def _passes_sanity_gate(method_key: str, entry: float, sl: float, tp: float) -> bool:
+    """
+    Final gate before sending any alert: cross-checks entry, SL, and TP
+    against today's actual traded range. If any of them fall clearly
+    outside where price has genuinely been today, refuse to send -
+    real live testing found 82/171 signals over 3 days were built on
+    bad price data this way (some $40-60 outside the real range), and a
+    timestamp-based freshness check alone didn't catch it.
+    """
+    for label, price in [("entry", entry), ("sl", sl), ("tp", tp)]:
+        is_sane, day_low, day_high = sanity_check_against_daily_range(price)
+        if not is_sane:
+            print(f"  [{method_key}] REFUSING to send - {label}={price:.2f} is outside today's actual range "
+                  f"({day_low:.2f}-{day_high:.2f} if known). Likely bad/stale price data this run.")
+            return False
+    return True
 from src.telegram_sender import send_message, format_setup_message
 from src.order_blocks import order_block_in_range, find_fvg_in_range, valid_pullback_entry
 from src.alert_state import already_alerted, mark_alerted
@@ -165,6 +183,9 @@ def handle_method_1(result: dict) -> None:
         print(f"  Skipping {method_key} - duplicate of a recent alert")
         return
 
+    if not _passes_sanity_gate(method_key, entry, sl, tp):
+        return
+
     msg = format_setup_message(
         method_name=result["method"],
         direction=direction,
@@ -247,6 +268,9 @@ def handle_method_2(result: dict) -> None:
         print(f"  Skipping {method_key} - duplicate of a recent alert")
         return
 
+    if not _passes_sanity_gate(method_key, entry, sl, tp):
+        return
+
     msg = format_setup_message(
         method_name=result["method"],
         direction=direction,
@@ -289,6 +313,9 @@ def handle_method_3(result: dict) -> None:
     method_key = "Method 3 (Liquidity + Structure)"
     if already_alerted(method_key, direction, entry, sl, tp):
         print(f"  Skipping {method_key} - duplicate of a recent alert")
+        return
+
+    if not _passes_sanity_gate(method_key, entry, sl, tp):
         return
 
     confluence_detail = ", ".join(f"{tf}:{entry_zone['confirming_models'].get(tf, '?')}" for tf in entry_zone["confirming_timeframes"])
