@@ -19,7 +19,7 @@ real Fib-pullback logic is built (see methods.py TODO).
 
 from src.methods import run_method_1, run_method_2
 from src.method3 import run_method_3
-from src.data_feed import get_candles, sanity_check_against_daily_range
+from src.data_feed import get_candles, sanity_check_against_daily_range, get_last_fetch_info
 
 
 def _passes_sanity_gate(method_key: str, entry: float, sl: float, tp: float) -> bool:
@@ -38,6 +38,31 @@ def _passes_sanity_gate(method_key: str, entry: float, sl: float, tp: float) -> 
                   f"({day_low:.2f}-{day_high:.2f} if known). Likely bad/stale price data this run.")
             return False
     return True
+
+
+def _fallback_warning_line() -> str:
+    """
+    XAUUSD=X (spot) was fully removed from Yahoo Finance - GC=F (COMEX
+    futures) is now the only working gold ticker, so a live basis
+    adjustment (see data_feed.py) is applied on every fetch to correct it
+    toward what a retail broker actually quotes. This surfaces a warning
+    whenever that correction couldn't be computed this run (the
+    independent reference ticker also failed) - so a raw, uncorrected
+    futures price is never sent silently, the way it was during the
+    original incident that caused ~$40+ entry errors.
+    """
+    info = get_last_fetch_info()
+    if info["basis_applied"]:
+        return (
+            f"\n\n_Note: futures price corrected by a live basis of {info['basis_adjustment']:.2f} "
+            f"(vs {info['basis_source']}) since spot gold data is unavailable on Yahoo Finance._"
+        )
+    return (
+        "\n\n⚠️ *Using RAW futures price, no basis correction available this run* "
+        "(reference source also failed) - price may differ meaningfully from your broker. Verify before acting."
+    )
+
+
 from src.telegram_sender import send_message, format_setup_message
 from src.order_blocks import order_block_in_range, find_fvg_in_range, valid_pullback_entry
 from src.alert_state import already_alerted, mark_alerted
@@ -176,6 +201,7 @@ def handle_method_1(result: dict) -> None:
         f"  Play type: {play_type}\n"
         f"  Entry source: {entry_source}\n"
         f"{combo_line}{align_line}"
+        f"{_fallback_warning_line()}"
     )
 
     method_key = "Method 1 (Combined)"
@@ -261,6 +287,7 @@ def handle_method_2(result: dict) -> None:
         f"  Play type: {play_type}\n"
         f"  Entry source: {entry_source}\n"
         f"  Note: {result.get('note', '')}"
+        f"{_fallback_warning_line()}"
     )
 
     method_key = "Method 2 (Monthly-Daily-Hourly-5m)"
@@ -327,7 +354,8 @@ def handle_method_3(result: dict) -> None:
             "Liquidity levels swept:\n" + swept_summary +
             f"\n  Entry-zone confluence: {entry_zone['confluence_strength']} ({confluence_detail})" +
             f"\n  Entry source: {entry_source}" +
-            sar_line + note
+            sar_line + note +
+            _fallback_warning_line()
         ),
         structure_summary=f"Daily trend: {result['structure'].get('daily', {}).get('trend')}",
     )

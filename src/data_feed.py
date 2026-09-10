@@ -15,16 +15,35 @@ import pandas as pd
 import datetime
 from src.retry_utils import retry_with_backoff
 
-# Primary + fallback tickers for gold. XAUUSD=X is the spot FX-style pair,
-# which is what retail brokers (OANDA, etc.) actually quote. GC=F is COMEX
-# gold FUTURES - it can diverge from spot by anywhere from a few dollars to
-# $20-30+ depending on contango/backwardation and time to contract expiry,
-# which will make every entry/SL/TP look "wrong" versus what your broker
-# shows even though the bot's math is otherwise correct. Previously had
-# these backwards (GC=F as primary) - fixed after real-world testing showed
-# this exact divergence.
-PRIMARY_TICKER = "XAUUSD=X"
-FALLBACK_TICKER = "GC=F"
+# GC=F (COMEX gold futures) is now the ONLY viable ticker for gold on
+# Yahoo Finance - XAUUSD=X (the spot FX-style pair) was fully removed by
+# Yahoo (confirmed by the user directly, and by live GitHub Actions logs
+# showing "Quote not found / possibly delisted" for every fetch attempt).
+# There is currently no working spot-gold fallback ticker on Yahoo Finance
+# at all, so there's no "primary vs fallback" cascade anymore - GC=F is
+# used for everything, always.
+#
+# Since GC=F is futures, not spot, it carries a variable basis premium
+# over what retail brokers (OANDA, etc.) actually quote - real live
+# testing found this gap ran ~$40+ during one incident, and it drifts
+# over time with contango/backwardation, so a hardcoded correction would
+# go stale. Instead, a LIVE basis adjustment is computed every fetch
+# against an independent gold-pegged reference (SPOT_REFERENCE_TICKER)
+# and applied to the returned OHLC before it ever reaches the strategy
+# logic. If that reference itself is unavailable, raw (unadjusted) GC=F
+# data is used and every alert built from it visibly says so
+# (see get_last_fetch_info() / main.py's _fallback_warning_line()).
+PRIMARY_TICKER = "GC=F"
+
+# PAXG (Pax Gold) and XAUT (Tether Gold) are both crypto tokens redeemable
+# 1:1 for physical gold and arbitraged tightly to spot gold price - used
+# only to compute the live futures-vs-spot basis adjustment above, NOT as
+# a primary data source (crypto liquidity/exchange quirks make either one
+# individually less reliable as the main feed, but averaging the two
+# smooths out single-source noise/quirks). If only one is available on a
+# given run, that one alone is used rather than failing the whole
+# adjustment - see _compute_live_basis().
+SPOT_REFERENCE_TICKERS = ["PAXG-USD", "XAUT-USD"]
 
 # Map our timeframe names to yfinance interval strings + how much history to pull
 TIMEFRAME_CONFIG = {
@@ -45,14 +64,18 @@ BAR_DURATION_MINUTES = {
     "daily": 24 * 60, "weekly": 7 * 24 * 60, "monthly": 30 * 24 * 60, "3m": 3,
 }
 
-# How many bar-durations old the last candle is allowed to be before we
-# treat the fetch as stale/unreliable rather than genuinely current. Real
-# live testing found yfinance intermittently serving stale/wrong candles
-# for XAUUSD=X - the SAME code path (last-close fallback) produced both
-# perfectly reasonable entries and ones $40-60 away from the day's actual
-# traded range on the same days, which only makes sense if the underlying
-# fetch was sometimes stale. This catches that before it reaches a signal.
 MAX_STALENESS_MULTIPLIER = 3
+
+# Module-level record of the most recent fetch's basis-adjustment status,
+# so main.py can surface a visible warning in the alert whenever the raw
+# futures price had to be used unadjusted (rather than that happening
+# invisibly). Reset/updated on every get_candles() call.
+_last_fetch_info = {"basis_applied": False, "basis_adjustment": 0.0, "basis_source": None}
+
+
+def get_last_fetch_info() -> dict:
+    """Returns info about whether the most recent get_candles() call could apply a live futures-to-spot basis adjustment, and what it was."""
+    return dict(_last_fetch_info)
 
 
 def is_data_fresh(df: pd.DataFrame, timeframe: str) -> bool:
@@ -102,16 +125,119 @@ def _download(ticker: str, interval: str, period: str) -> pd.DataFrame:
     return df
 
 
+def _compute_live_basis() -> tuple:
+    """
+    Computes a LIVE futures-vs-spot basis (GC=F price minus a gold-pegged
+    spot reference) to correct GC=F toward what a retail broker actually
+    quotes, instead of a hardcoded offset that goes stale as
+    contango/backwardation shifts over time (a user manually subtracted a
+    fixed $45 after observing this gap once - reasonable as a one-off
+    sanity check, but not stable day to day).
+
+    Uses the AVERAGE of both SPOT_REFERENCE_TICKERS (PAXG-USD, XAUT-USD)
+    when both are fetchable, to smooth out single-source noise/quirks
+    (crypto exchange spreads, momentary liquidity gaps). If only one comes
+    back, that one alone is used rather than failing the whole adjustment.
+
+    Returns (basis: float, source: str) - source describes which
+    reference(s) were actually used ("PAXG-USD + XAUT-USD (avg)", or just
+    one name if only that one was available). basis is 0.0 with
+    source=None only if BOTH references fail, in which case raw GC=F data
+    is used un-adjusted (still better than crashing, but flagged in
+    get_last_fetch_info so every alert built from it visibly says so).
+    """
+    try:
+        futures_df = _download(PRIMARY_TICKER, "5m", "1d")
+        futures_price = float(futures_df["Close"].iloc[-1])
+    except Exception as e:
+        print(f"  [data_feed] Could not fetch {PRIMARY_TICKER} itself for basis computation ({e})")
+        return 0.0, None
+
+    ref_prices = {}
+    for ticker in SPOT_REFERENCE_TICKERS:
+        try:
+            ref_df = _download(ticker, "5m", "1d")
+            ref_prices[ticker] = float(ref_df["Close"].iloc[-1])
+        except Exception as e:
+            print(f"  [data_feed] Reference ticker {ticker} unavailable for basis computation ({e})")
+
+    if not ref_prices:
+        print("  [data_feed] Both reference tickers unavailable - using raw GC=F price, unadjusted")
+        return 0.0, None
+
+    spot_ref_price = sum(ref_prices.values()) / len(ref_prices)
+    basis = futures_price - spot_ref_price
+
+    if len(ref_prices) == len(SPOT_REFERENCE_TICKERS):
+        source = " + ".join(ref_prices.keys()) + " (avg)"
+    else:
+        source = list(ref_prices.keys())[0]
+
+    return basis, source
+
+
+def get_candles(timeframe: str) -> pd.DataFrame:
+    """
+    Fetch candles for a given timeframe name (see TIMEFRAME_CONFIG), using
+    GC=F (COMEX gold futures) - the only working gold ticker left on Yahoo
+    Finance since XAUUSD=X was removed, confirmed directly by the user and
+    by live GitHub Actions error logs. There is no fallback ticker to try
+    if this fails; retries with backoff (see _download) are the only
+    resilience against transient failures.
+
+    Since GC=F is futures, not spot, a LIVE basis adjustment is computed
+    and applied on every call (see _compute_live_basis) so the returned
+    prices track what a retail broker actually quotes rather than raw
+    futures. If that adjustment can't be computed, raw GC=F data is used
+    and _last_fetch_info records this so every alert built from it
+    visibly flags the caveat rather than that happening invisibly.
+
+    Handles the 4h resample manually since yfinance has no native 4h
+    interval. Raises if GC=F fails or returns stale data after all
+    retries - callers (main.py) should catch this per-method so one
+    failed/stale timeframe fetch doesn't crash the entire scheduled run,
+    and critically does NOT silently send a signal built on bad data.
+    """
+    global _last_fetch_info
+
+    if timeframe not in TIMEFRAME_CONFIG:
+        raise ValueError(f"Unknown timeframe '{timeframe}'. Options: {list(TIMEFRAME_CONFIG)}")
+
+    cfg = TIMEFRAME_CONFIG[timeframe]
+
+    df = _download(PRIMARY_TICKER, cfg["interval"], cfg["period"])
+    if not is_data_fresh(df, timeframe):
+        raise ValueError(f"{PRIMARY_TICKER} data for {timeframe} is stale (last candle too old) - no fallback ticker available to try instead")
+
+    basis, basis_source = _compute_live_basis()
+    if basis != 0.0:
+        for col in ["Open", "High", "Low", "Close"]:
+            if col in df.columns:
+                df[col] = df[col] - basis
+        print(f"  [data_feed] Applied live basis adjustment of {basis:.2f} (source: {basis_source}) to {PRIMARY_TICKER} data for {timeframe}")
+    _last_fetch_info = {"basis_applied": basis != 0.0, "basis_adjustment": basis, "basis_source": basis_source}
+
+    if timeframe == "4h":
+        df = resample_ohlc(df, "4h")
+
+    return df
+
+
 def sanity_check_against_daily_range(price: float, buffer_pct: float = 0.01) -> tuple:
     """
     Cross-checks a computed price (entry/SL/TP) against TODAY's actual
     daily candle High/Low, fetched independently. This catches a failure
     mode the timestamp-based is_data_fresh() check CANNOT catch: a candle
-    with a fresh, current timestamp but a WRONG price value. Real live
-    testing found exactly this - the same "last close" code path produced
-    both normal entries and entries $40-60 outside the day's genuine
-    traded range, on days where the timestamp was current, meaning
-    staleness alone wasn't the (only) problem.
+    with a fresh, current timestamp but a WRONG price value (e.g. a bad
+    print from the data provider).
+
+    Since GC=F is now the only gold ticker on Yahoo Finance and the same
+    live basis adjustment (see get_candles) is applied everywhere it's
+    used, this check's own "daily" fetch is corrected the same way as the
+    entry-timeframe fetch it's validating - so both should land in the
+    same (spot-corrected) price neighborhood when everything is working
+    normally, keeping this check meaningful for catching genuine one-off
+    bad candles rather than a structural basis mismatch.
 
     buffer_pct allows a little room beyond the day's recorded high/low,
     since the daily candle is still forming intraday and there can be a
@@ -136,40 +262,6 @@ def sanity_check_against_daily_range(price: float, buffer_pct: float = 0.01) -> 
 
     is_sane = (day_low - buffer) <= price <= (day_high + buffer)
     return is_sane, day_low, day_high
-
-
-def get_candles(timeframe: str) -> pd.DataFrame:
-    """
-    Fetch candles for a given timeframe name (see TIMEFRAME_CONFIG).
-    Tries PRIMARY_TICKER first (with retries), falls back to
-    FALLBACK_TICKER (also with retries) only if the primary is completely
-    exhausted OR its data comes back stale (see is_data_fresh). Handles
-    the 4h resample manually since yfinance has no native 4h interval.
-
-    Raises if BOTH tickers fail or return stale data after all retries -
-    callers (main.py) should catch this per-method so one failed/stale
-    timeframe fetch doesn't crash the entire scheduled run, and critically
-    does NOT silently send a signal built on bad data.
-    """
-    if timeframe not in TIMEFRAME_CONFIG:
-        raise ValueError(f"Unknown timeframe '{timeframe}'. Options: {list(TIMEFRAME_CONFIG)}")
-
-    cfg = TIMEFRAME_CONFIG[timeframe]
-
-    try:
-        df = _download(PRIMARY_TICKER, cfg["interval"], cfg["period"])
-        if not is_data_fresh(df, timeframe):
-            raise ValueError(f"{PRIMARY_TICKER} data for {timeframe} is stale (last candle too old)")
-    except Exception as primary_error:
-        print(f"  [data_feed] Primary ticker {PRIMARY_TICKER} failed/stale for {timeframe} ({primary_error}), trying fallback {FALLBACK_TICKER}...")
-        df = _download(FALLBACK_TICKER, cfg["interval"], cfg["period"])
-        if not is_data_fresh(df, timeframe):
-            raise ValueError(f"Both {PRIMARY_TICKER} and {FALLBACK_TICKER} data for {timeframe} is stale - refusing to use it")
-
-    if timeframe == "4h":
-        df = resample_ohlc(df, "4h")
-
-    return df
 
 
 def resample_ohlc(df: pd.DataFrame, rule: str) -> pd.DataFrame:
