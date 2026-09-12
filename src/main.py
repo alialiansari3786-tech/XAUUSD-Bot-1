@@ -65,6 +65,7 @@ def _fallback_warning_line() -> str:
 
 from src.telegram_sender import send_message, format_setup_message
 from src.order_blocks import order_block_in_range, find_fvg_in_range, valid_pullback_entry
+from src.ob_memory import is_ob_still_valid_for_entry, mark_used
 from src.alert_state import already_alerted, mark_alerted
 import datetime
 
@@ -151,6 +152,15 @@ def handle_method_1(result: dict) -> None:
     fvg = find_fvg_in_range(m15_df, trading_range) if trading_range else None
     combined_htf_zone = result.get("daily_h4_combined_zone")
 
+    # REAL INCIDENT this guards against: the bot fired 3 consecutive
+    # bullish continuation trades in a zone where price had already
+    # tapped a 1H OB and was heading down instead - the bot had no memory
+    # it had already used (or that price had already invalidated) that
+    # exact zone. Discard the OB entirely if memory says it's stale.
+    if ob and not is_ob_still_valid_for_entry("15m", direction, ob["top"], ob["bottom"], last_close):
+        print("  [Method 1] Discarding OB - already used for a prior entry or since invalidated by price")
+        ob = None
+
     ob_entry = (ob["bottom"] if is_bullish else ob["top"]) if ob else None
     fvg_entry = fvg["mid"] if fvg else None
     combined_entry = combined_htf_zone["mid"] if combined_htf_zone else None
@@ -221,6 +231,8 @@ def handle_method_1(result: dict) -> None:
     )
     send_message(msg)
     mark_alerted(method_key, direction, entry, sl, tp)
+    if ob:
+        mark_used("15m", direction, ob["top"], ob["bottom"])
 
 
 def handle_method_2(result: dict) -> None:
@@ -251,6 +263,13 @@ def handle_method_2(result: dict) -> None:
     trading_range = m5_state.get("trading_range")
     ob = order_block_in_range(m5_df, trading_range, direction) if trading_range else None
     fvg = find_fvg_in_range(m5_df, trading_range) if trading_range else None
+
+    # Same OB-memory guard as Method 1 - this is the exact method where the
+    # real 3-consecutive-loss incident happened, firing repeat continuation
+    # trades off a zone price had already moved through.
+    if ob and not is_ob_still_valid_for_entry("5m", direction, ob["top"], ob["bottom"], last_close):
+        print("  [Method 2] Discarding OB - already used for a prior entry or since invalidated by price")
+        ob = None
 
     ob_entry = (ob["bottom"] if is_bullish else ob["top"]) if ob else None
     fvg_entry = fvg["mid"] if fvg else None
@@ -307,6 +326,8 @@ def handle_method_2(result: dict) -> None:
     )
     send_message(msg)
     mark_alerted(method_key, direction, entry, sl, tp)
+    if ob:
+        mark_used("5m", direction, ob["top"], ob["bottom"])
 
 
 def handle_method_3(result: dict) -> None:
