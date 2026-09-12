@@ -34,6 +34,6 @@ jobs:
         run: |
           git config user.name "xauusd-bot"
           git config user.email "actions@github.com"
-          git add state/alert_state.json
+          git add state/alert_state.json state/ob_memory.json
           git diff --cached --quiet || git commit -m "Update alert state [skip ci]"
           git push
