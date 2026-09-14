@@ -6,5 +6,21 @@
     "sl": 4324.186662946428,
     "tp": 4347.800990513393,
     "timestamp": 1789348989.4271286
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bearish",
+    "entry": 4299.81494140625,
+    "sl": 4303.957972935268,
+    "tp": 4291.528878348214,
+    "timestamp": 1789385895.5277035
+  },
+  {
+    "method": "Method 3 (Liquidity + Structure)",
+    "direction": "bearish",
+    "entry": 4342.71484375,
+    "sl": 4345.293422154018,
+    "tp": 4296.54833984375,
+    "timestamp": 1789386280.7385871
   }
 ]
