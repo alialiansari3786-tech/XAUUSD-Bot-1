@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "timeframe": "15m",
+    "direction": "bearish",
+    "top": 3969.206787109375,
+    "bottom": 3958.806640625,
+    "first_seen": 1789378675.0871708,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
+  }
+]
