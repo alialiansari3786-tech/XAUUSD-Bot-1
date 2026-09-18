@@ -1,0 +1,137 @@
+{
+  "_instructions": "Extracted high-impact (red folder) news events with times converted from IST to UTC.",
+  "events": [
+    {
+      "name": "ISM Manufacturing PMI",
+      "datetime_utc": "2026-09-01T14:00:00Z"
+    },
+    {
+      "name": "Average Hourly Earnings m/m",
+      "datetime_utc": "2026-09-04T12:30:00Z"
+    },
+    {
+      "name": "Non-Farm Employment Change",
+      "datetime_utc": "2026-09-04T12:30:00Z"
+    },
+    {
+      "name": "Unemployment Rate",
+      "datetime_utc": "2026-09-04T12:30:00Z"
+    },
+    {
+      "name": "Core PPI m/m",
+      "datetime_utc": "2026-09-10T12:30:00Z"
+    },
+    {
+      "name": "PPI m/m",
+      "datetime_utc": "2026-09-10T12:30:00Z"
+    },
+    {
+      "name": "Core CPI m/m",
+      "datetime_utc": "2026-09-11T12:30:00Z"
+    },
+    {
+      "name": "Core CPI y/y",
+      "datetime_utc": "2026-09-11T12:30:00Z"
+    },
+    {
+      "name": "CPI m/m",
+      "datetime_utc": "2026-09-11T12:30:00Z"
+    },
+    {
+      "name": "CPI y/y",
+      "datetime_utc": "2026-09-11T12:30:00Z"
+    },
+    {
+      "name": "Federal Funds Rate",
+      "datetime_utc": "2026-09-16T18:00:00Z"
+    },
+    {
+      "name": "FOMC Economic Projections",
+      "datetime_utc": "2026-09-16T18:00:00Z"
+    },
+    {
+      "name": "FOMC Statement",
+      "datetime_utc": "2026-09-16T18:00:00Z"
+    },
+    {
+      "name": "FOMC Press Conference",
+      "datetime_utc": "2026-09-16T18:30:00Z"
+    },
+    {
+      "name": "Core PCE Price Index m/m",
+      "datetime_utc": "2026-09-30T12:30:00Z"
+    },
+    {
+      "name": "Final GDP q/q",
+      "datetime_utc": "2026-09-30T12:30:00Z"
+    },
+    {
+      "name": "Average Hourly Earnings m/m",
+      "datetime_utc": "2026-10-02T12:30:00Z"
+    },
+    {
+      "name": "Non-Farm Employment Change",
+      "datetime_utc": "2026-10-02T12:30:00Z"
+    },
+    {
+      "name": "Unemployment Rate",
+      "datetime_utc": "2026-10-02T12:30:00Z"
+    },
+    {
+      "name": "FOMC Meeting Minutes",
+      "datetime_utc": "2026-10-07T18:00:00Z"
+    },
+    {
+      "name": "Core CPI m/m",
+      "datetime_utc": "2026-10-14T12:30:00Z"
+    },
+    {
+      "name": "Core CPI y/y",
+      "datetime_utc": "2026-10-14T12:30:00Z"
+    },
+    {
+      "name": "CPI m/m",
+      "datetime_utc": "2026-10-14T12:30:00Z"
+    },
+    {
+      "name": "CPI y/y",
+      "datetime_utc": "2026-10-14T12:30:00Z"
+    },
+    {
+      "name": "Core PPI m/m",
+      "datetime_utc": "2026-10-15T12:30:00Z"
+    },
+    {
+      "name": "Core Retail Sales m/m",
+      "datetime_utc": "2026-10-15T12:30:00Z"
+    },
+    {
+      "name": "PPI m/m",
+      "datetime_utc": "2026-10-15T12:30:00Z"
+    },
+    {
+      "name": "Retail Sales m/m",
+      "datetime_utc": "2026-10-15T12:30:00Z"
+    },
+    {
+      "name": "Federal Funds Rate",
+      "datetime_utc": "2026-10-28T18:00:00Z"
+    },
+    {
+      "name": "FOMC Statement",
+      "datetime_utc": "2026-10-28T18:00:00Z"
+    },
+    {
+      "name": "FOMC Press Conference",
+      "datetime_utc": "2026-10-28T18:30:00Z"
+    },
+    {
+      "name": "Advance GDP q/q",
+      "datetime_utc": "2026-10-29T12:30:00Z"
+    },
+    {
+      "name": "Core PCE Price Index m/m",
+      "datetime_utc": "2026-10-29T12:30:00Z"
+    }
+  ]
+}
