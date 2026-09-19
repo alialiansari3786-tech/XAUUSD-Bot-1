@@ -167,6 +167,43 @@ def run_method_1() -> dict:
     }
 
 
+"""
+run_method_2() below fixes a real live bug: major_trend was picked from
+the single most-recent Simple MSS event on Daily/1H with NO check on how
+long ago it fired. Since Simple MSS requires a strict valid-swing filter,
+events can be sparse - if price has since clearly moved on without yet
+satisfying that strict trigger again, the bot kept trusting a stale
+direction, producing trades fighting the actual current trend (2 real
+bearish trades never got touched because the real trend had already
+turned bullish since that last Simple MSS fired).
+"""
+
+MAX_STALE_DAILY_CANDLES = 10   # ~2 trading weeks - beyond this, don't trust the last Daily Simple MSS
+MAX_STALE_1H_CANDLES = 48      # ~2 days - beyond this, don't trust the last 1H Simple MSS
+
+
+def _latest_fresh_direction(mss_events, df, max_stale_candles: int):
+    """
+    Returns the most recent Simple MSS event's direction, but only if it
+    happened within max_stale_candles of the latest available candle -
+    otherwise returns None rather than trusting a stale signal.
+    """
+    if not mss_events or isinstance(mss_events, dict) or not mss_events:
+        return None
+
+    latest_event = mss_events[-1]
+    try:
+        event_pos = df.index.get_loc(latest_event["index"])
+    except (KeyError, TypeError):
+        return None  # can't verify recency - safer to not trust it
+
+    candles_since = (len(df) - 1) - event_pos
+    if candles_since > max_stale_candles:
+        return None
+
+    return latest_event["direction"]
+
+
 def run_method_2() -> dict:
     """
     Monthly-Daily-Hourly-5m Method: uses Simple MSS (mss_simple.py, valid-
@@ -177,21 +214,25 @@ def run_method_2() -> dict:
     """
     mss_by_tf = {}
     fib_by_tf = {}
+    candles_by_tf = {}
 
     for tf in METHOD_2_STRUCTURE_TIMEFRAMES:
         try:
             df = get_candles(tf)
+            candles_by_tf[tf] = df
             mss_by_tf[tf] = detect_simple_mss(df)
             fib_by_tf[tf] = track_fib_structure(df, timeframe=tf)
         except Exception as e:
             mss_by_tf[tf] = {"error": str(e)}
             fib_by_tf[tf] = {"error": str(e)}
 
-    daily_mss_events = mss_by_tf.get("daily")
-    daily_direction = daily_mss_events[-1]["direction"] if daily_mss_events and not isinstance(daily_mss_events, dict) and daily_mss_events else None
+    daily_direction = None
+    if "daily" in candles_by_tf:
+        daily_direction = _latest_fresh_direction(mss_by_tf.get("daily"), candles_by_tf["daily"], MAX_STALE_DAILY_CANDLES)
 
-    h1_mss_events = mss_by_tf.get("1h")
-    h1_direction = h1_mss_events[-1]["direction"] if h1_mss_events and not isinstance(h1_mss_events, dict) and h1_mss_events else None
+    h1_direction = None
+    if "1h" in candles_by_tf:
+        h1_direction = _latest_fresh_direction(mss_by_tf.get("1h"), candles_by_tf["1h"], MAX_STALE_1H_CANDLES)
 
     h1_agrees = h1_direction is not None and h1_direction == daily_direction
     pullback_in_progress = daily_direction is not None and not h1_agrees and h1_direction is not None

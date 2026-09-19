@@ -66,6 +66,7 @@ def _fallback_warning_line() -> str:
 from src.telegram_sender import send_message, format_setup_message
 from src.order_blocks import order_block_in_range, find_fvg_in_range, valid_pullback_entry
 from src.ob_memory import is_ob_still_valid_for_entry, mark_used
+from src.news_awareness import is_within_blackout_window, sl_widen_multiplier_if_news_pending
 from src.alert_state import already_alerted, mark_alerted
 import datetime
 
@@ -93,27 +94,38 @@ def _safe_sl(candidate_sl, entry: float, is_bullish: bool, recent_df, lookback_b
     typical 15m candle's range, causing normal market noise to trigger
     stops before any real move could develop (a run of losing trades on
     real data traced directly to this).
-    """
-    if candidate_sl is not None:
-        if is_bullish and candidate_sl < entry:
-            return candidate_sl
-        if not is_bullish and candidate_sl > entry:
-            return candidate_sl
 
-    # structural SL was stale/wrong-sided (or missing) - use the real extreme instead
-    window = recent_df.tail(lookback_bars)
-    atr = calculate_atr(recent_df, period=14)
-    if is_bullish:
-        extreme = window["Low"].min()
-        sl = extreme - atr
-        if sl >= entry:
-            sl = entry - atr
+    Finally, if a high-impact news event is due soon enough to plausibly
+    land while this trade is still open, the resulting SL distance is
+    widened further (see news_awareness.py) - a live trade's SL "barely
+    survived" a CPI release because pure structure-based sizing has no
+    concept of scheduled volatility events.
+    """
+    if candidate_sl is not None and (
+        (is_bullish and candidate_sl < entry) or (not is_bullish and candidate_sl > entry)
+    ):
+        base_sl = candidate_sl
     else:
-        extreme = window["High"].max()
-        sl = extreme + atr
-        if sl <= entry:
-            sl = entry + atr
-    return sl
+        # structural SL was stale/wrong-sided (or missing) - use the real extreme instead
+        window = recent_df.tail(lookback_bars)
+        atr = calculate_atr(recent_df, period=14)
+        if is_bullish:
+            extreme = window["Low"].min()
+            base_sl = extreme - atr
+            if base_sl >= entry:
+                base_sl = entry - atr
+        else:
+            extreme = window["High"].max()
+            base_sl = extreme + atr
+            if base_sl <= entry:
+                base_sl = entry + atr
+
+    news_multiplier = sl_widen_multiplier_if_news_pending()
+    if news_multiplier == 1.0:
+        return base_sl
+
+    distance = abs(entry - base_sl) * news_multiplier
+    return entry - distance if is_bullish else entry + distance
 
 
 def handle_method_1(result: dict) -> None:
@@ -251,8 +263,10 @@ def handle_method_2(result: dict) -> None:
 
     m5_fib = result["fib_structure_by_timeframe"].get("5m", {})
     daily_fib = result["fib_structure_by_timeframe"].get("daily", {})
+    h1_fib = result["fib_structure_by_timeframe"].get("1h", {})
     m5_state = m5_fib.get("uptrend_state" if is_bullish else "downtrend_state", {}) if not isinstance(m5_fib, dict) or "uptrend_state" in m5_fib else {}
     daily_state = daily_fib.get("uptrend_state" if is_bullish else "downtrend_state", {}) if not isinstance(daily_fib, dict) or "uptrend_state" in daily_fib else {}
+    h1_state = h1_fib.get("uptrend_state" if is_bullish else "downtrend_state", {}) if not isinstance(h1_fib, dict) or "uptrend_state" in h1_fib else {}
 
     m5_df = get_candles("5m")
     last_close = m5_df["Close"].iloc[-1]
@@ -285,19 +299,45 @@ def handle_method_2(result: dict) -> None:
         entry_source = "last close (no valid pullback OB/FVG found - approximation)"
 
     sl = _safe_sl(m5_state.get("recent_stl") if is_bullish else m5_state.get("recent_sth"), entry, is_bullish, m5_df)
+    risk = abs(entry - sl)
+
+    # TP: per the actual strategy this should target a real structural
+    # level (Daily OB, or a 1H/Daily Confirmation Point) rather than a
+    # generic 1:2 R:R - live testing showed the bot was defaulting to the
+    # crude 1:2 fallback on nearly every trade because Daily OB was never
+    # computed at all for Method 2, and only Daily/5m Confirmation Points
+    # were tried (never 1H), with a distance check strict enough to reject
+    # most of them anyway.
+    daily_df = get_candles("daily")
+    daily_trading_range = daily_state.get("trading_range")
+    daily_ob = order_block_in_range(daily_df, daily_trading_range, direction) if daily_trading_range else None
+    daily_ob_target = (daily_ob["top"] if is_bullish else daily_ob["bottom"]) if daily_ob else None
+
+    MIN_TP_MULTIPLE = 1.3  # loosened from the old 1.5x, which rejected too many legitimate closer targets
+
+    def _tp_candidate_ok(candidate):
+        if candidate is None:
+            return False
+        if is_bullish:
+            return candidate > entry and (candidate - entry) >= risk * MIN_TP_MULTIPLE
+        return candidate < entry and (entry - candidate) >= risk * MIN_TP_MULTIPLE
 
     tp = None
-    if is_pullback_play:
-        tp = daily_state.get("confirmation_point")
+    tp_source = None
+    for candidate, source in [
+        (daily_ob_target, "Daily OB"),
+        (h1_state.get("confirmation_point"), "1H Confirmation Point"),
+        (daily_state.get("confirmation_point"), "Daily Confirmation Point"),
+        (m5_state.get("confirmation_point"), "5m Confirmation Point"),
+    ]:
+        if _tp_candidate_ok(candidate):
+            tp = candidate
+            tp_source = source
+            break
+
     if tp is None:
-        tp = m5_state.get("confirmation_point")
-    risk = abs(entry - sl)
-    tp_valid = tp is not None and (
-        (is_bullish and tp > entry and (tp - entry) >= risk * 1.5) or
-        (not is_bullish and tp < entry and (entry - tp) >= risk * 1.5)
-    )
-    if not tp_valid:
         tp = entry + risk * 2 if is_bullish else entry - risk * 2
+        tp_source = "1:2 R:R fallback (no valid structural target found)"
 
     play_type = "Trend Continuation" if full_alignment else "Pullback (counter-trend, targeting HTF confirmation)"
     summary = (
@@ -305,6 +345,7 @@ def handle_method_2(result: dict) -> None:
         f"  1H agrees: {result['h1_agrees']}\n"
         f"  Play type: {play_type}\n"
         f"  Entry source: {entry_source}\n"
+        f"  TP source: {tp_source}\n"
         f"  Note: {result.get('note', '')}"
         f"{_fallback_warning_line()}"
     )
@@ -401,6 +442,11 @@ def is_market_weekday() -> bool:
 def main():
     if not is_market_weekday():
         print("Weekend (UTC) - gold markets closed, skipping this run entirely.")
+        return
+
+    in_blackout, event_name = is_within_blackout_window()
+    if in_blackout:
+        print(f"  Within news blackout window for '{event_name}' - skipping this run entirely (no new signals right around high-impact releases).")
         return
 
     # Each method is wrapped independently: if yfinance/Telegram fail even
