@@ -2,17 +2,17 @@
   {
     "method": "Method 3 (Liquidity + Structure)",
     "direction": "bearish",
-    "entry": 4345.533203125,
-    "sl": 4356.833251953125,
-    "tp": 4287.68310546875,
-    "timestamp": 1790174700.6166055
-  },
-  {
-    "method": "Method 3 (Liquidity + Structure)",
-    "direction": "bearish",
     "entry": 4299.541748046875,
     "sl": 4300.123814174107,
     "tp": 4277.230712890625,
     "timestamp": 1790237152.9435084
+  },
+  {
+    "method": "Method 3 (Liquidity + Structure)",
+    "direction": "bearish",
+    "entry": 4338.0,
+    "sl": 4338.364292689732,
+    "tp": 4304.883382161458,
+    "timestamp": 1790309274.8567317
   }
 ]
