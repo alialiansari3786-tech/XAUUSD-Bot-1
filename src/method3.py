@@ -15,6 +15,9 @@ from src.sar import mark_sr_levels, track_fresh_unfresh, detect_rejection, detec
 from src.mss import detect_mss, latest_mss
 from src.order_blocks import find_order_block, find_fvg_in_range, valid_pullback_entry
 from src.confirmation_models import detect_cisd, detect_unicorn, detect_turtle_soup, detect_scob
+import datetime
+
+MAX_METHOD3_PRICE_AGE_MINUTES = 60
 
 LIQUIDITY_TIMEFRAMES = ["weekly", "daily", "4h", "1h", "15m"]
 
@@ -201,11 +204,26 @@ def check_entry_zone_confluence(direction: str, sweep_time, current_price: float
 
 def run_method_3() -> dict:
     candles = {tf: get_candles(tf) for tf in LIQUIDITY_TIMEFRAMES}
+
+    price_timestamp = candles["15m"].index[-1]
+    price_timestamp_utc = price_timestamp.tz_localize("UTC") if price_timestamp.tzinfo is None else price_timestamp.tz_convert("UTC")
+    price_age_minutes = (datetime.datetime.now(datetime.timezone.utc) - price_timestamp_utc).total_seconds() / 60
+
+    if price_age_minutes > MAX_METHOD3_PRICE_AGE_MINUTES:
+        print(f"  [Method 3] REFUSING - 15m price data is {price_age_minutes:.0f} min old (max {MAX_METHOD3_PRICE_AGE_MINUTES} min)")
+        return {
+            "method": "Liquidity + Structure",
+            "setup_found": False,
+            "price_timestamp": str(price_timestamp),
+            "price_age_minutes": round(price_age_minutes, 1),
+            "note": f"REFUSED - 15m price data is {price_age_minutes:.0f} min old (max {MAX_METHOD3_PRICE_AGE_MINUTES} min allowed).",
+        }
+
     structure = {tf: label_structure(df) for tf, df in candles.items()}
 
     liquidity_levels = build_liquidity_map(candles)
     current_price = candles["15m"]["Close"].iloc[-1]
-    swept_levels = check_liquidity_sweep(current_price, liquidity_levels)
+    swept_levels = check_liquidity_sweep(candles["15m"], liquidity_levels)
 
     indicator = custom_indicator_signal()
     sar = check_sar_confluence(candles["daily"])
@@ -307,6 +325,8 @@ def run_method_3() -> dict:
     return {
         "method": "Liquidity + Structure",
         "current_price": current_price,
+        "price_timestamp": str(price_timestamp),
+        "price_age_minutes": round(price_age_minutes, 1),
         "swept_levels": swept_levels,
         "structure": structure,
         "indicator": indicator,
