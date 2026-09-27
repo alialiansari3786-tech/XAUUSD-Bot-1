@@ -397,6 +397,7 @@ def handle_method_3(result: dict) -> None:
         f"  {s['level_name']}: {s['level_price']:.2f} ({s['side']} swept)" for s in result["swept_levels"]
     )
     sar_line = f"\n  SAR confluence agrees: {result['sar_agrees']}" if result["sar_agrees"] is not None else ""
+    age_line = f"\n  15m price data age: {result.get('price_age_minutes', '?')} min" if "price_age_minutes" in result else ""
     note = f"\n\n_Note: {result['note']}_" if result.get("note") else ""
 
     method_key = "Method 3 (Liquidity + Structure)"
@@ -416,7 +417,7 @@ def handle_method_3(result: dict) -> None:
             "Liquidity levels swept:\n" + swept_summary +
             f"\n  Entry-zone confluence: {entry_zone['confluence_strength']} ({confluence_detail})" +
             f"\n  Entry source: {entry_source}" +
-            sar_line + note +
+            sar_line + age_line + note +
             _fallback_warning_line()
         ),
         structure_summary=f"Daily trend: {result['structure'].get('daily', {}).get('trend')}",
