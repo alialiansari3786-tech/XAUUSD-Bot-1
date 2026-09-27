@@ -61,21 +61,31 @@ def old_high_low(df: pd.DataFrame, lookback_bars: int = 50) -> dict:
     return {"old_high": older["High"].max(), "old_low": older["Low"].min()}
 
 
-def check_liquidity_sweep(current_price: float, levels: dict, max_distance_pct: float = 0.01) -> list:
+def check_liquidity_sweep(df: pd.DataFrame, levels: dict, max_distance_pct: float = 0.01, lookback_candles: int = 5) -> list:
     """
-    Given the current price and a dict of named liquidity levels
-    (e.g. {'weekly_high': 2415.3, 'equal_high_1': 2410.1, ...}),
-    returns a list of levels that price has just taken out (swept),
-    each paired with the implied opposite-side target direction.
+    Given a recent-candle dataframe (needs High/Low/Close) and a dict of
+    named liquidity levels, returns levels that have been GENUINELY swept:
+    price wicked beyond the level within the last `lookback_candles`
+    candles, then has since closed back on the ORIGIN side (a failed
+    break / stop-hunt) - not merely "current price happens to be beyond
+    this level right now", which wrongly flags a clean breakout
+    continuation as a sweep-and-reversal setup.
 
-    max_distance_pct limits this to levels within a reasonable proximity
-    of current price (default 1%). Without this, a level from months or
-    years ago that price simply ended up above/below (in a long trend)
-    would incorrectly count as "just swept" forever - a real sweep means
-    price recently interacted with that specific level, not that it's
-    eventually beyond some old historical price.
+    REAL INCIDENT this fixes: 3 consecutive bearish "Liquidity + Structure"
+    alerts fired while price was breaking cleanly above successive old
+    equal-highs during a real uptrend and continuing to rally - the old
+    version treated "current price > old high level" as automatically a
+    "swept high, expect reversal down" signal, with no check that price
+    ever actually rejected back down. All 3 shorts were run over by
+    continued upside and stopped out.
     """
+    if df is None or df.empty:
+        return []
+
+    current_price = df["Close"].iloc[-1]
+    recent = df.tail(lookback_candles)
     swept = []
+
     for name, price in levels.items():
         if price is None:
             continue
@@ -84,10 +94,20 @@ def check_liquidity_sweep(current_price: float, levels: dict, max_distance_pct: 
             continue  # too far away to be a meaningful "just swept" level
 
         is_high_level = "high" in name.lower()
-        if is_high_level and current_price > price:
-            swept.append({"level_name": name, "level_price": price, "side": "high", "target_side": "low"})
-        elif (not is_high_level) and current_price < price:
-            swept.append({"level_name": name, "level_price": price, "side": "low", "target_side": "high"})
+
+        if is_high_level:
+            # genuine sweep: some recent candle wicked ABOVE the level,
+            # but price has since closed back BELOW it (the break failed)
+            wicked_above = bool((recent["High"] > price).any())
+            closed_back_below = current_price < price
+            if wicked_above and closed_back_below:
+                swept.append({"level_name": name, "level_price": price, "side": "high", "target_side": "low"})
+        else:
+            wicked_below = bool((recent["Low"] < price).any())
+            closed_back_above = current_price > price
+            if wicked_below and closed_back_above:
+                swept.append({"level_name": name, "level_price": price, "side": "low", "target_side": "high"})
+
     return swept
 
 
