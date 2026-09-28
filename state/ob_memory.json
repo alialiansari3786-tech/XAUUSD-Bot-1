@@ -1,16 +1,6 @@
 [
   {
     "timeframe": "15m",
-    "direction": "bearish",
-    "top": 3954.86474609375,
-    "bottom": 3949.664794921875,
-    "first_seen": 1789396043.458355,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
     "direction": "bullish",
     "top": 4585.313720703125,
     "bottom": 4576.113525390625,
@@ -88,5 +78,15 @@
     "used_count": 0,
     "last_used": null,
     "invalidated": true
+  },
+  {
+    "timeframe": "15m",
+    "direction": "bearish",
+    "top": 4130.529541015625,
+    "bottom": 4126.829833984375,
+    "first_seen": 1790612865.524038,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
   }
 ]
