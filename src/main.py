@@ -18,7 +18,9 @@ real Fib-pullback logic is built (see methods.py TODO).
 """
 
 from src.methods import run_method_1, run_method_2
-from src.method3 import run_method_3
+from src.method3_msnr import run_liquidity_msnr_method
+from src.bias_state import get_method3_bias
+from src import msnr_memory
 from src.data_feed import get_candles, sanity_check_against_daily_range, get_last_fetch_info
 
 
@@ -371,36 +373,27 @@ def handle_method_2(result: dict) -> None:
         mark_used("5m", direction, ob["top"], ob["bottom"])
 
 
-def handle_method_3(result: dict) -> None:
-    if not result["setup_found"]:
+def handle_liquidity_msnr(result: dict) -> None:
+    if not result.get("setup_found"):
+        if result.get("note"):
+            print(f"  [Liquidity MSNR] {result['note']}")
         return
 
-    entry_zone = result["entry_zone"]
-    if not entry_zone["confirming_timeframes"]:
-        return  # liquidity swept and structure agrees, but no entry-zone confirmation yet
+    direction = result["direction"]
+    entry, sl, tp = result["entry"], result["sl"], result["tp"]
 
-    direction = result["setup_direction"]
-    entry_info = entry_zone["entry_info"]
-    entry = entry_info["entry"] if entry_info else result["current_price"]
-    entry_source = f"{entry_info['type']} on {entry_info['timeframe']}" if entry_info else "current price (no OB/FVG found - approximation)"
-
-    sl = result["sl"]
-    tp = result["tp"]
-    if sl is None:
-        return  # no structural stop available - skip rather than guess
-
-    if tp is None:
-        risk = abs(entry - sl)
-        tp = entry + risk * 2 if direction == "bullish" else entry - risk * 2
-
-    swept_summary = "\n".join(
-        f"  {s['level_name']}: {s['level_price']:.2f} ({s['side']} swept)" for s in result["swept_levels"]
+    anchor = result["anchor_key_level"]
+    age_line = f"\n  Price data age: {result.get('price_age_minutes', '?')} min" if "price_age_minutes" in result else ""
+    summary = (
+        f"  Bias: {result['bias']} (checkpoint {result.get('bias_checkpoint', '?')})\n"
+        f"  Confluence: {result['confluence_type']}\n"
+        f"  Anchor Key Level: {anchor['type']} on {anchor['timeframe']} @ {anchor['price']:.2f}\n"
+        f"  Entry source: {result['entry_source']} on {result['entry_timeframe']}"
+        f"{age_line}"
+        f"{_fallback_warning_line()}"
     )
-    sar_line = f"\n  SAR confluence agrees: {result['sar_agrees']}" if result["sar_agrees"] is not None else ""
-    age_line = f"\n  15m price data age: {result.get('price_age_minutes', '?')} min" if "price_age_minutes" in result else ""
-    note = f"\n\n_Note: {result['note']}_" if result.get("note") else ""
 
-    method_key = "Method 3 (Liquidity + Structure)"
+    method_key = "Liquidity MSNR Method"
     if already_alerted(method_key, direction, entry, sl, tp):
         print(f"  Skipping {method_key} - duplicate of a recent alert")
         return
@@ -408,23 +401,18 @@ def handle_method_3(result: dict) -> None:
     if not _passes_sanity_gate(method_key, entry, sl, tp):
         return
 
-    confluence_detail = ", ".join(f"{tf}:{entry_zone['confirming_models'].get(tf, '?')}" for tf in entry_zone["confirming_timeframes"])
     msg = format_setup_message(
-        method_name="Liquidity + Structure Method",
+        method_name=method_key,
         direction=direction,
         entry=entry, sl=sl, tp=tp,
-        alignment_summary=(
-            "Liquidity levels swept:\n" + swept_summary +
-            f"\n  Entry-zone confluence: {entry_zone['confluence_strength']} ({confluence_detail})" +
-            f"\n  Entry source: {entry_source}" +
-            sar_line + age_line + note +
-            _fallback_warning_line()
-        ),
-        structure_summary=f"Daily trend: {result['structure'].get('daily', {}).get('trend')}",
+        alignment_summary=summary,
+        structure_summary=f"Key Levels inside leg: {result.get('levels_in_leg_count', '?')}",
     )
     send_message(msg)
     mark_alerted(method_key, direction, entry, sl, tp)
 
+    mu = result["_mark_used"]
+    msnr_memory.mark_used(mu["timeframe"], mu["level_type"], mu["direction"], mu["price"])
 
 def is_market_weekday() -> bool:
     """
@@ -468,12 +456,16 @@ def main():
     except Exception as e:
         print(f"  Method 2 failed this run, skipping: {e}")
 
-    print("Running Method 3 (Liquidity + Structure)...")
+    print("Running Liquidity MSNR Method...")
     try:
-        m3 = run_method_3()
-        handle_method_3(m3)
+        m1_1h_dir = m1.get("mss_by_timeframe", {}).get("1h", {})
+        m1_1h_dir = m1_1h_dir.get("direction") if isinstance(m1_1h_dir, dict) else None
+        m2_1h_dir = m2.get("h1_direction")
+        bias_info = get_method3_bias(m1_1h_dir, m2_1h_dir)
+        m3 = run_liquidity_msnr_method(bias_info)
+        handle_liquidity_msnr(m3)
     except Exception as e:
-        print(f"  Method 3 failed this run, skipping: {e}")
+        print(f"  Liquidity MSNR Method failed this run, skipping: {e}")
 
     print("Done.")
 
