@@ -242,6 +242,7 @@ def run_method_2() -> dict:
         "mss_by_timeframe": mss_by_tf,
         "fib_structure_by_timeframe": fib_by_tf,
         "major_trend": daily_direction,
+        "h1_direction": h1_direction,
         "h1_agrees": h1_agrees,
         "pullback_in_progress": pullback_in_progress,
         "note": "Monthly OB context not yet wired in (needs OB detection on Monthly TF)",
