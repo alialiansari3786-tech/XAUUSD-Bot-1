@@ -1,1 +1,8 @@
-{}
+{
+  "bias": "bearish",
+  "checkpoint": "2026-09-29T01:00:00-04:00",
+  "computed_from": {
+    "m1_1h": "bearish",
+    "m2_1h": "bearish"
+  }
+}
