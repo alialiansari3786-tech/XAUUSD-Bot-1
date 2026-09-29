@@ -88,5 +88,15 @@
     "used_count": 0,
     "last_used": null,
     "invalidated": false
+  },
+  {
+    "timeframe": "15m",
+    "direction": "bullish",
+    "top": 4588.1416015625,
+    "bottom": 4581.6416015625,
+    "first_seen": 1790692832.682376,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
   }
 ]
