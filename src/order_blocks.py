@@ -153,4 +153,44 @@ def find_fvg_in_range(df: pd.DataFrame, range_bounds: tuple) -> dict | None:
             mid = (high_now + low_2ago) / 2
             return {"top": low_2ago, "bottom": high_now, "mid": mid, "time": df.index[i], "bias": "bearish"}
 
-    return None
+
+def find_ifvg_in_range(df: pd.DataFrame, range_bounds: tuple) -> dict | None:
+    """
+    Finds an inversion FVG (iFVG): a Fair Value Gap that has since been
+    fully closed through (price closed beyond the gap entirely), flipping
+    its role - a bullish FVG that gets closed below becomes a bearish POI,
+    and vice versa. Uses the FULL original FVG range (not the reduced/
+    partial-fill remainder) as the POI zone, per the MSNR-method POI rule.
+    """
+    if range_bounds is None or len(df) < 3:
+        return None
+    low_bound, high_bound = min(range_bounds), max(range_bounds)
+
+    for i in range(2, len(df)):
+        high_2ago = df["High"].iloc[i - 2]
+        low_2ago = df["Low"].iloc[i - 2]
+        low_now = df["Low"].iloc[i]
+        high_now = df["High"].iloc[i]
+
+        bull_gap = low_now > high_2ago
+        bear_gap = high_now < low_2ago
+
+        if bull_gap:
+            top, bottom = float(low_now), float(high_2ago)
+            if not (low_bound <= bottom and top <= high_bound):
+                continue
+            for j in range(i + 1, len(df)):
+                if df["Close"].iloc[j] < bottom:
+                    return {"top": top, "bottom": bottom, "mid": (top + bottom) / 2,
+                            "time": df.index[j], "bias": "bearish", "inverted_from": "bullish_fvg"}
+
+        if bear_gap:
+            top, bottom = float(low_2ago), float(high_now)
+            if not (low_bound <= bottom and top <= high_bound):
+                continue
+            for j in range(i + 1, len(df)):
+                if df["Close"].iloc[j] > top:
+                    return {"top": top, "bottom": bottom, "mid": (top + bottom) / 2,
+                            "time": df.index[j], "bias": "bullish", "inverted_from": "bearish_fvg"}
+
+return None
