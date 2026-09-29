@@ -193,4 +193,4 @@ def find_ifvg_in_range(df: pd.DataFrame, range_bounds: tuple) -> dict | None:
                     return {"top": top, "bottom": bottom, "mid": (top + bottom) / 2,
                             "time": df.index[j], "bias": "bullish", "inverted_from": "bearish_fvg"}
 
-return None
+    return None
