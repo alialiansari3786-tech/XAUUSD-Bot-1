@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "timeframe": "4h",
+    "level_type": "V",
+    "direction": "support",
+    "price": 4181.91259765625,
+    "first_seen": 1790773181.1417608,
+    "used_count": 1,
+    "last_used": 1790773181.1417627
+  }
+]
