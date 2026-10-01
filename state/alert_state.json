@@ -1,13 +1,5 @@
 [
   {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bullish",
-    "entry": 4185.994873046875,
-    "sl": 4177.2691650390625,
-    "tp": 4203.4462890625,
-    "timestamp": 1790765648.6650972
-  },
-  {
     "method": "Liquidity MSNR Method",
     "direction": "bullish",
     "entry": 4183.86279296875,
@@ -38,5 +30,13 @@
     "sl": 4175.068708147322,
     "tp": 4142.604527064732,
     "timestamp": 1790848494.581236
+  },
+  {
+    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
+    "direction": "bearish",
+    "entry": 4176.6552734375,
+    "sl": 4182.862653459822,
+    "tp": 4164.240513392857,
+    "timestamp": 1790852679.4055586
   }
 ]
