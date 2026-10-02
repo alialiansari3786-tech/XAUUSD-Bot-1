@@ -2,38 +2,6 @@
   {
     "method": "Method 2 (Monthly-Daily-Hourly-5m)",
     "direction": "bearish",
-    "entry": 4164.247314453125,
-    "sl": 4175.068708147322,
-    "tp": 4142.604527064732,
-    "timestamp": 1790848494.581236
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
-    "entry": 4176.6552734375,
-    "sl": 4182.862653459822,
-    "tp": 4164.240513392857,
-    "timestamp": 1790852679.4055586
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bearish",
-    "entry": 4185.793701171875,
-    "sl": 4196.093645368303,
-    "tp": 4165.193812779018,
-    "timestamp": 1790863167.5502849
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bearish",
-    "entry": 4176.29052734375,
-    "sl": 4190.261928013393,
-    "tp": 4148.347726004464,
-    "timestamp": 1790872008.2957218
-  },
-  {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
     "entry": 4179.231201171875,
     "sl": 4195.95281110491,
     "tp": 4145.787981305804,
@@ -54,5 +22,13 @@
     "sl": 4143.633510044643,
     "tp": 4192.126534598214,
     "timestamp": 1790915210.3449893
+  },
+  {
+    "method": "Liquidity MSNR Method",
+    "direction": "bearish",
+    "entry": 4174.6787109375,
+    "sl": 4193.62859235491,
+    "tp": 4136.778948102679,
+    "timestamp": 1790959074.848623
   }
 ]
