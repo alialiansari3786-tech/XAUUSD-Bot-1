@@ -312,8 +312,11 @@ def handle_method_2(result: dict) -> None:
     # most of them anyway.
     daily_df = get_candles("daily")
     daily_trading_range = daily_state.get("trading_range")
-    daily_ob = order_block_in_range(daily_df, daily_trading_range, direction) if daily_trading_range else None
-    daily_ob_target = (daily_ob["top"] if is_bullish else daily_ob["bottom"]) if daily_ob else None
+    # TP needs the OPPOSITE-side OB (supply above for buys, demand below for sells);
+    # use its near edge = "start of the HTF OB"
+    opposite_dir = "bearish" if is_bullish else "bullish"
+    daily_ob = order_block_in_range(daily_df, daily_trading_range, opposite_dir) if daily_trading_range else None
+    daily_ob_target = (daily_ob["bottom"] if is_bullish else daily_ob["top"]) if daily_ob else None
 
     MIN_TP_MULTIPLE = 1.3  # loosened from the old 1.5x, which rejected too many legitimate closer targets
 
@@ -326,16 +329,18 @@ def handle_method_2(result: dict) -> None:
 
     tp = None
     tp_source = None
-    for candidate, source in [
+    tp_candidates = [
         (daily_ob_target, "Daily OB"),
         (h1_state.get("confirmation_point"), "1H Confirmation Point"),
         (daily_state.get("confirmation_point"), "Daily Confirmation Point"),
         (m5_state.get("confirmation_point"), "5m Confirmation Point"),
-    ]:
-        if _tp_candidate_ok(candidate):
+    ]
+    for candidate, source in tp_candidates:
+        ok = _tp_candidate_ok(candidate)
+        print(f"  [Method 2 TP] {source}: {candidate if candidate is None else round(candidate, 2)} -> {'OK' if ok else 'rejected'}")
+        if ok and tp is None:
             tp = candidate
             tp_source = source
-            break
 
     if tp is None:
         tp = entry + risk * 2 if is_bullish else entry - risk * 2
