@@ -90,7 +90,7 @@ def track_fib_structure(df: pd.DataFrame, timeframe: str, lookback: int = 2) -> 
 
         # Check for body-close break of confirmation point -> new Recent STL
         if up["confirmed"] and up["confirmation_point"] is not None:
-            if close_price < up["confirmation_point"]:
+            if close_price > up["confirmation_point"]:
                 lows_between = [sw["price"] for sw in swings if sw["type"] == "low" and sw["index"] <= idx]
                 new_stl = lows_between[-1] if lows_between else up["recent_stl"]
                 history.append({"index": idx, "event": "STL Confirmation Point broken -> new Recent STL", "price": new_stl})
@@ -115,7 +115,7 @@ def track_fib_structure(df: pd.DataFrame, timeframe: str, lookback: int = 2) -> 
                 history.append({"index": idx, "event": f"New STH Confirmation Point set ({timeframe}, {pullback:.1%} pullback)", "price": down["running_low"]})
 
         if down["confirmed"] and down["confirmation_point"] is not None:
-            if close_price > down["confirmation_point"]:
+            if close_price < down["confirmation_point"]:
                 highs_between = [sw["price"] for sw in swings if sw["type"] == "high" and sw["index"] <= idx]
                 new_sth = highs_between[-1] if highs_between else down["recent_sth"]
                 history.append({"index": idx, "event": "STH Confirmation Point broken -> new Recent STH", "price": new_sth})
