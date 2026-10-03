@@ -33,6 +33,9 @@ def _passes_sanity_gate(method_key: str, entry: float, sl: float, tp: float) -> 
     bad price data this way (some $40-60 outside the real range), and a
     timestamp-based freshness check alone didn't catch it.
     """
+    if not get_last_fetch_info()["basis_applied"]:
+        print(f"  [{method_key}] REFUSING to send - no valid spot-basis correction this run (price would be raw futures).")
+        return False
     for label, price in [("entry", entry), ("sl", sl), ("tp", tp)]:
         is_sane, day_low, day_high = sanity_check_against_daily_range(price)
         if not is_sane:
