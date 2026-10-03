@@ -66,6 +66,13 @@ BAR_DURATION_MINUTES = {
 
 MAX_STALENESS_MULTIPLIER = 3
 
+# --- Basis-correction safety limits ---
+BASIS_CACHE_SECONDS = 600        # work out the basis once per run, reuse it for every timeframe
+MAX_BASIS_BAR_AGE_MINUTES = 15   # prices used for the basis must be this fresh
+MAX_REF_DISAGREEMENT = 8.0       # if PAXG and XAUT differ by more than this ($), distrust both
+MAX_PLAUSIBLE_BASIS = 80.0       # a basis bigger than +/- this ($) is treated as bad data
+_basis_cache = {"time": 0.0, "basis": 0.0, "source": None}
+
 # Module-level record of the most recent fetch's basis-adjustment status,
 # so main.py can surface a visible warning in the alert whenever the raw
 # futures price had to be used unadjusted (rather than that happening
@@ -125,7 +132,72 @@ def _download(ticker: str, interval: str, period: str) -> pd.DataFrame:
     return df
 
 
+def _close_series_utc(ticker: str) -> pd.Series:
+    """Latest 5m closes for a ticker, indexed in UTC so different tickers can be matched bar-for-bar."""
+    df = _download(ticker, "5m", "1d")
+    series = df["Close"].astype(float).copy()
+    series.index = pd.to_datetime(series.index)
+    if series.index.tz is None:
+        series.index = series.index.tz_localize("UTC")
+    else:
+        series.index = series.index.tz_convert("UTC")
+    return series
+
+
 def _compute_live_basis() -> tuple:
+    """
+    Futures-vs-spot basis, computed ONCE per run (cached) from the newest 5m bar
+    that futures and the reference tokens share, and only if that bar is fresh,
+    the two tokens agree, and the result is plausible. Returns (basis, source);
+    (0.0, None) means no trustworthy basis was available.
+    """
+    now_ts = datetime.datetime.now().timestamp()
+    if _basis_cache["time"] and now_ts - _basis_cache["time"] < BASIS_CACHE_SECONDS:
+        return _basis_cache["basis"], _basis_cache["source"]
+
+    basis, source = 0.0, None
+    try:
+        futures = _close_series_utc(PRIMARY_TICKER)
+        refs = {}
+        for ticker in SPOT_REFERENCE_TICKERS:
+            try:
+                refs[ticker] = _close_series_utc(ticker)
+            except Exception as e:
+                print(f"  [data_feed] Reference ticker {ticker} unavailable for basis computation ({e})")
+
+        if not refs:
+            print("  [data_feed] Both reference tickers unavailable - no basis this run")
+        else:
+            joined = pd.concat([futures.rename("fut")] + [s.rename(t) for t, s in refs.items()],
+                               axis=1, join="inner").dropna()
+            if joined.empty:
+                print("  [data_feed] No 5m bar shared by futures and reference tickers - no basis this run")
+            else:
+                last_ts = joined.index[-1]
+                age = (datetime.datetime.now(datetime.timezone.utc) - last_ts).total_seconds() / 60
+                ref_cols = [c for c in joined.columns if c != "fut"]
+                last_row = joined.iloc[-1]
+                if age > MAX_BASIS_BAR_AGE_MINUTES:
+                    print(f"  [data_feed] Newest shared futures/reference bar is {age:.0f} min old - no basis this run")
+                elif len(ref_cols) == 2 and abs(last_row[ref_cols[0]] - last_row[ref_cols[1]]) > MAX_REF_DISAGREEMENT:
+                    print(f"  [data_feed] PAXG and XAUT disagree by more than ${MAX_REF_DISAGREEMENT:.0f} - no basis this run")
+                else:
+                    ref_avg = joined[ref_cols].mean(axis=1)
+                    candidate = float((joined["fut"] - ref_avg).tail(3).median())
+                    if abs(candidate) > MAX_PLAUSIBLE_BASIS:
+                        print(f"  [data_feed] Basis {candidate:.2f} is outside plausible range - no basis this run")
+                    else:
+                        basis = candidate
+                        source = " + ".join(ref_cols) + " (avg)" if len(ref_cols) == 2 else ref_cols[0]
+                        print(f"  [data_feed] Basis this run: {basis:.2f} from {source} (bar age {age:.0f} min)")
+    except Exception as e:
+        print(f"  [data_feed] Basis computation failed ({e}) - no basis this run")
+
+    _basis_cache.update({"time": now_ts, "basis": basis, "source": source})
+    return basis, source
+
+
+def _compute_live_basis_old_unused() -> tuple:
     """
     Computes a LIVE futures-vs-spot basis (GC=F price minus a gold-pegged
     spot reference) to correct GC=F toward what a retail broker actually
