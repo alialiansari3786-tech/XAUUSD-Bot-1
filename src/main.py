@@ -259,6 +259,10 @@ def handle_method_2(result: dict) -> None:
 
     is_pullback_play = result["pullback_in_progress"]
     full_alignment = result["h1_agrees"] and not is_pullback_play
+    ALLOW_COUNTER_TREND_PULLBACKS = False   # change to True to turn these trades back on
+    if is_pullback_play and not ALLOW_COUNTER_TREND_PULLBACKS:
+        print("  [Method 2] Skipping counter-trend pullback play (1H disagrees with Daily) - paused")
+        return
 
     if not (full_alignment or is_pullback_play):
         return
@@ -302,6 +306,10 @@ def handle_method_2(result: dict) -> None:
     else:
         entry = last_close
         entry_source = "last close (no valid pullback OB/FVG found - approximation)"
+
+    if entry_source.startswith("last close"):
+        print("  [Method 2] Skipping - no real OB/FVG pullback zone found (would be a market-price entry)")
+        return
 
     sl = _safe_sl(m5_state.get("recent_stl") if is_bullish else m5_state.get("recent_sth"), entry, is_bullish, m5_df)
     risk = abs(entry - sl)
