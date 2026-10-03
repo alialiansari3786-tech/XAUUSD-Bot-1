@@ -405,6 +405,7 @@ def handle_liquidity_msnr(result: dict) -> None:
         f"  Confluence: {result['confluence_type']}\n"
         f"  Anchor Key Level: {anchor['type']} on {anchor['timeframe']} @ {anchor['price']:.2f}\n"
         f"  Entry source: {result['entry_source']} on {result['entry_timeframe']}"
+        f"\n  TP source: {result.get('tp_source', '?')}"
         f"{age_line}"
         f"{_fallback_warning_line()}"
     )
