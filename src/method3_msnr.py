@@ -15,7 +15,7 @@ framework:
      (fibo2.py). Entry = the POI if present, else whichever Fibo2 zone
      gives a valid pullback entry.
   5. SL = beyond the leg's own extreme (ATR-buffered), unless that
-     distance exceeds ~50 pips, in which case fall back to the paired
+     distance exceeds ~100 pips, in which case fall back to the paired
      Fibo2 zone's outer line (0.109/0.214).
      ASSUMPTION: 1 pip = $0.10 for XAUUSD - adjust PIP_SIZE below if your
      broker quotes differently.
@@ -45,8 +45,11 @@ KEY_LEVEL_TIMEFRAMES = ["4h", "1h"]
 ENTRY_TIMEFRAMES = ["15m", "5m"]
 MAX_METHOD3_PRICE_AGE_MINUTES = 60
 PIP_SIZE = 0.10          # ASSUMPTION for XAUUSD - confirm/adjust to your broker's pip convention
-MAX_SL_PIPS = 50
+MAX_SL_PIPS = 100
 MIN_TP_RISK_MULTIPLE = 1.5
+MAX_BARS_SINCE_MSS = {"15m": 16, "5m": 48}   # MSS must be at most ~4 hours old
+MIN_DISPLACEMENT_BODY_ATR = 1.0              # MSS candle body must be >= this x ATR
+MIN_LEG_ATR = 2.5                            # impulse leg must be >= this x ATR
 
 
 def _find_poi_in_leg(df, leg_bounds, direction: str) -> dict | None:
@@ -105,6 +108,31 @@ def run_liquidity_msnr_method(bias_info: dict) -> dict:
     if fibo is None:
         return {"method": "Liquidity MSNR Method", "bias": bias, "setup_found": False,
                 "note": "Could not compute Fibo2 zone for the latest MSS event."}
+
+    # --- Displacement / freshness gate ---
+    _df = candles[entry_tf]
+    _atr = calculate_atr(_df, period=14)
+    _pos = _df.index.get_loc(mss_event["index"])
+    _bars_since = (len(_df) - 1) - _pos
+    _candle = _df.iloc[_pos]
+    _body = abs(_candle["Close"] - _candle["Open"])
+    _right_way = (_candle["Close"] > _candle["Open"]) if bias == "bullish" else (_candle["Close"] < _candle["Open"])
+    _leg = abs(fibo["price1"] - fibo["price0"])
+    _last = _df["Close"].iloc[-1]
+    _grab_broken = (_last <= fibo["price0"]) if bias == "bullish" else (_last >= fibo["price0"])
+
+    _reject = None
+    if _bars_since > MAX_BARS_SINCE_MSS[entry_tf]:
+        _reject = f"MSS is stale ({_bars_since} bars old on {entry_tf})"
+    elif not _right_way or _body < MIN_DISPLACEMENT_BODY_ATR * _atr:
+        _reject = f"weak MSS candle (body {_body:.2f} vs ATR {_atr:.2f})"
+    elif _leg < MIN_LEG_ATR * _atr:
+        _reject = f"impulse leg too small ({_leg:.2f} vs ATR {_atr:.2f})"
+    elif _grab_broken:
+        _reject = "price already back through the MSS grab point (MSS failed)"
+    if _reject:
+        return {"method": "Liquidity MSNR Method", "bias": bias, "setup_found": False,
+                "note": f"REJECTED - {_reject}."}
 
     leg_low, leg_high = sorted([fibo["price0"], fibo["price1"]])
     levels_in_leg = [lvl for lvl in key_levels if leg_low <= lvl["price"] <= leg_high]
