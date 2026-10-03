@@ -69,13 +69,58 @@ def find_valid_swings(df: pd.DataFrame, lookback: int = 2) -> list:
     return valid
 
 
+MIN_DISPLACEMENT_ATR = 1.0   # confirming candle body must be at least this x average candle range
+MAX_BARS_TO_CONFIRM = 10     # confirmation must come within this many candles of the swing
+
+
+def find_valid_swings_v2(df: pd.DataFrame, lookback: int = 2) -> list:
+    """
+    Stricter valid-swing filter. A swing low is valid only if it (1) takes out the PREVIOUS
+    swing low (a real liquidity grab) and (2) is followed within MAX_BARS_TO_CONFIRM candles
+    by a strong candle (body >= MIN_DISPLACEMENT_ATR x average range) that closes back above
+    the swing candle's high. Swing highs are the mirror image.
+    """
+    d = find_swings(df, lookback=lookback)
+    avg_range = (df["High"] - df["Low"]).rolling(14, min_periods=1).mean()
+    valid = []
+    prev_low = None
+    prev_high = None
+
+    for i in range(len(d)):
+        if d["swing_low"].iloc[i]:
+            low_price = float(df["Low"].iloc[i])
+            swept = prev_low is not None and low_price < prev_low
+            prev_low = low_price
+            if swept:
+                level = float(df["High"].iloc[i])
+                for j in range(i + 1, min(i + 1 + MAX_BARS_TO_CONFIRM, len(df))):
+                    body = abs(df["Close"].iloc[j] - df["Open"].iloc[j])
+                    if df["Close"].iloc[j] > level and body >= MIN_DISPLACEMENT_ATR * avg_range.iloc[j]:
+                        valid.append({"index": df.index[i], "price": low_price, "type": "low", "valid": True})
+                        break
+
+        if d["swing_high"].iloc[i]:
+            high_price = float(df["High"].iloc[i])
+            swept = prev_high is not None and high_price > prev_high
+            prev_high = high_price
+            if swept:
+                level = float(df["Low"].iloc[i])
+                for j in range(i + 1, min(i + 1 + MAX_BARS_TO_CONFIRM, len(df))):
+                    body = abs(df["Close"].iloc[j] - df["Open"].iloc[j])
+                    if df["Close"].iloc[j] < level and body >= MIN_DISPLACEMENT_ATR * avg_range.iloc[j]:
+                        valid.append({"index": df.index[i], "price": high_price, "type": "high", "valid": True})
+                        break
+
+    return valid
+
+
 def detect_simple_mss(df: pd.DataFrame, lookback: int = 2) -> list:
     """
     Detects Simple MSS events using only VALID swings (per the filter
     above) as anchors, then applies the same grab+body-close-break-of-prior-
     opposite-swing mechanic as mss.py's detect_mss.
     """
-    valid_swings = find_valid_swings(df, lookback=lookback)
+    valid_swings = find_valid_swings_v2(df, lookback=lookback)
     valid_highs = [(df.index.get_loc(s["index"]), s["price"]) for s in valid_swings if s["type"] == "high"]
     valid_lows = [(df.index.get_loc(s["index"]), s["price"]) for s in valid_swings if s["type"] == "low"]
 
