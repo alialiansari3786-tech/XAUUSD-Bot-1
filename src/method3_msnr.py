@@ -34,7 +34,7 @@ floor/sanity check so SL never lands on the wrong side of entry.
 import datetime
 
 from src.data_feed import get_candles
-from src.structure import calculate_atr
+from src.structure import calculate_atr, find_swings
 from src.mss import detect_mss
 from src.msnr_levels import collect_key_levels
 from src.fibo2 import compute_fibo2_zone
@@ -85,8 +85,8 @@ def run_liquidity_msnr_method(bias_info: dict) -> dict:
             "note": f"REFUSED - price data is {price_age_minutes:.0f} min old (max {MAX_METHOD3_PRICE_AGE_MINUTES} min).",
         }
 
-    key_levels = collect_key_levels(candles["4h"], "4h") + collect_key_levels(candles["1h"], "1h")
-    key_levels = [lvl for lvl in key_levels if lvl["status"] == "fresh"]
+    all_key_levels = collect_key_levels(candles["4h"], "4h") + collect_key_levels(candles["1h"], "1h")
+    key_levels = [lvl for lvl in all_key_levels if lvl["status"] == "fresh"]
 
     mss_event = None
     entry_tf = None
@@ -159,15 +159,22 @@ def run_liquidity_msnr_method(bias_info: dict) -> dict:
     sl = candidate_sl
     risk = abs(entry - sl)
 
-    # --- TP: nearest fresh opposite-side Key Level ---
-    opposite = [lvl["price"] for lvl in key_levels if (is_bullish and lvl["price"] > entry) or ((not is_bullish) and lvl["price"] < entry)]
-    tp = None
-    if opposite:
-        candidate_tp = min(opposite) if is_bullish else max(opposite)
-        if abs(candidate_tp - entry) >= risk * MIN_TP_RISK_MULTIPLE:
-            tp = candidate_tp
-    if tp is None:
+    # --- TP: nearest structural target that clears the minimum R:R ---
+    target_role = "resistance" if is_bullish else "support"
+    targets = [(lvl["price"], f"{lvl['type']} {lvl['timeframe']}") for lvl in all_key_levels if lvl["direction"] == target_role]
+    swing_col, swing_flag, swing_name = ("High", "swing_high", "swing high") if is_bullish else ("Low", "swing_low", "swing low")
+    for _tf in KEY_LEVEL_TIMEFRAMES:
+        _sw = find_swings(candles[_tf], lookback=2)
+        targets += [(float(p), f"{swing_name} {_tf}") for p in _sw.loc[_sw[swing_flag], swing_col]]
+    valid_targets = [
+        (p, src) for p, src in targets
+        if ((p > entry) if is_bullish else (p < entry)) and abs(p - entry) >= risk * MIN_TP_RISK_MULTIPLE
+    ]
+    if valid_targets:
+        tp, tp_source = min(valid_targets, key=lambda t: abs(t[0] - entry))
+    else:
         tp = entry + risk * 2 if is_bullish else entry - risk * 2
+        tp_source = "1:2 R:R fallback (no structural target found)"
 
     return {
         "method": "Liquidity MSNR Method",
@@ -182,6 +189,7 @@ def run_liquidity_msnr_method(bias_info: dict) -> dict:
         "anchor_key_level": {"type": anchor_level["type"], "timeframe": anchor_level["timeframe"], "price": anchor_level["price"]},
         "sl": sl,
         "tp": tp,
+        "tp_source": tp_source,
         "price_timestamp": str(price_timestamp),
         "price_age_minutes": round(price_age_minutes, 1),
         "levels_in_leg_count": len(levels_in_leg),
