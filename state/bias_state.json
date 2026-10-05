@@ -1,8 +1,8 @@
 {
-  "bias": "bullish",
-  "checkpoint": "2026-10-04T17:45:00-04:00",
+  "bias": "bearish",
+  "checkpoint": "2026-10-05T01:00:00-04:00",
   "computed_from": {
-    "m1_1h": "bullish",
+    "m1_1h": "bearish",
     "m2_1h": "bearish"
   }
 }
