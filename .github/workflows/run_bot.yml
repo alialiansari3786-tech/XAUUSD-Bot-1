@@ -3,7 +3,7 @@ name: XAUUSD Setup Scanner
 on:
   schedule:
     # Every 15 minutes. GitHub Actions cron uses UTC.
-    - cron: "*/15 * * * *"
+    - cron: "4,19,34,49 * * * *"
   workflow_dispatch: {}   # lets you manually trigger a run from the Actions tab
 
 permissions:
