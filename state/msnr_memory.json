@@ -1,59 +1,5 @@
 [
   {
-    "timeframe": "4h",
-    "level_type": "V",
-    "direction": "support",
-    "price": 4181.91259765625,
-    "first_seen": 1790773181.1417608,
-    "used_count": 1,
-    "last_used": 1790773181.1417627
-  },
-  {
-    "timeframe": "1h",
-    "level_type": "V",
-    "direction": "support",
-    "price": 4155.991943359375,
-    "first_seen": 1790816278.8594563,
-    "used_count": 1,
-    "last_used": 1790816278.8594575
-  },
-  {
-    "timeframe": "4h",
-    "level_type": "A",
-    "direction": "resistance",
-    "price": 4185.59375,
-    "first_seen": 1790863167.5509555,
-    "used_count": 1,
-    "last_used": 1790863167.5509572
-  },
-  {
-    "timeframe": "4h",
-    "level_type": "V",
-    "direction": "support",
-    "price": 4173.3408203125,
-    "first_seen": 1790872008.296201,
-    "used_count": 1,
-    "last_used": 1790872008.2962022
-  },
-  {
-    "timeframe": "4h",
-    "level_type": "V",
-    "direction": "support",
-    "price": 4159.947998046875,
-    "first_seen": 1790915210.345468,
-    "used_count": 1,
-    "last_used": 1790915210.3454695
-  },
-  {
-    "timeframe": "1h",
-    "level_type": "V",
-    "direction": "support",
-    "price": 4175.379150390625,
-    "first_seen": 1790959074.8490644,
-    "used_count": 1,
-    "last_used": 1790959074.849066
-  },
-  {
     "timeframe": "1h",
     "level_type": "V",
     "direction": "resistance",
@@ -70,5 +16,14 @@
     "first_seen": 1791951649.6960018,
     "used_count": 1,
     "last_used": 1791951649.696003
+  },
+  {
+    "timeframe": "4h",
+    "level_type": "V",
+    "direction": "support",
+    "price": 4168.266357421875,
+    "first_seen": 1792420508.7235174,
+    "used_count": 1,
+    "last_used": 1792420508.7235184
   }
 ]
