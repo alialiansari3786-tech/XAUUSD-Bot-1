@@ -43,5 +43,14 @@
     "first_seen": 1792655403.658888,
     "used_count": 1,
     "last_used": 1792655403.6588893
+  },
+  {
+    "timeframe": "1h",
+    "level_type": "A",
+    "direction": "resistance",
+    "price": 4092.5386962890625,
+    "first_seen": 1792668904.2165816,
+    "used_count": 1,
+    "last_used": 1792668904.216583
   }
 ]
