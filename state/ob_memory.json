@@ -2,26 +2,6 @@
   {
     "timeframe": "15m",
     "direction": "bearish",
-    "top": 4088.911865234375,
-    "bottom": 4085.411865234375,
-    "first_seen": 1791807603.310916,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
-    "top": 4117.7001953125,
-    "bottom": 4114.2001953125,
-    "first_seen": 1791813003.9985454,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
     "top": 4187.279296875,
     "bottom": 4181.37939453125,
     "first_seen": 1791906605.428025,
@@ -165,6 +145,16 @@
     "top": 4039.558349609375,
     "bottom": 4029.3583984375,
     "first_seen": 1792974898.307525,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
+  },
+  {
+    "timeframe": "15m",
+    "direction": "bearish",
+    "top": 4027.6806640625,
+    "bottom": 4023.480712890625,
+    "first_seen": 1793071191.5866916,
     "used_count": 0,
     "last_used": null,
     "invalidated": false
