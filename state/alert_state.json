@@ -1,10 +1,10 @@
 [
   {
     "method": "Liquidity MSNR Method",
-    "direction": "bullish",
-    "entry": 4000.1009521484375,
-    "sl": 3988.343767438616,
-    "tp": 4019.1510009765625,
-    "timestamp": 1793109458.6112509
+    "direction": "bearish",
+    "entry": 4051.9609375,
+    "sl": 4060.189522879464,
+    "tp": 4039.61083984375,
+    "timestamp": 1793199050.4819405
   }
 ]

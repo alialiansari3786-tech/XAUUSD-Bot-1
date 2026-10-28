@@ -1,14 +1,5 @@
 [
   {
-    "timeframe": "1h",
-    "level_type": "V",
-    "direction": "resistance",
-    "price": 4159.67529296875,
-    "first_seen": 1791951649.6960018,
-    "used_count": 1,
-    "last_used": 1791951649.696003
-  },
-  {
     "timeframe": "4h",
     "level_type": "V",
     "direction": "support",
@@ -61,5 +52,14 @@
     "first_seen": 1793109458.611652,
     "used_count": 1,
     "last_used": 1793109458.611653
+  },
+  {
+    "timeframe": "1h",
+    "level_type": "A",
+    "direction": "support",
+    "price": 4052.0609130859375,
+    "first_seen": 1793199050.4823625,
+    "used_count": 1,
+    "last_used": 1793199050.4823656
   }
 ]
