@@ -2,76 +2,6 @@
   {
     "timeframe": "15m",
     "direction": "bearish",
-    "top": 4187.279296875,
-    "bottom": 4181.37939453125,
-    "first_seen": 1791906605.428025,
-    "used_count": 1,
-    "last_used": 1791906606.4821253,
-    "invalidated": false
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
-    "top": 4212.2998046875,
-    "bottom": 4206.39990234375,
-    "first_seen": 1791915584.3404117,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": false
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
-    "top": 4160.387939453125,
-    "bottom": 4154.887939453125,
-    "first_seen": 1791938992.703435,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bullish",
-    "top": 4610.973388671875,
-    "bottom": 4597.773193359375,
-    "first_seen": 1791947999.9001753,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
-    "top": 4167.785400390625,
-    "bottom": 4160.485107421875,
-    "first_seen": 1791970507.5426643,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": false
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
-    "top": 4153.109619140625,
-    "bottom": 4149.309814453125,
-    "first_seen": 1791986685.394117,
-    "used_count": 1,
-    "last_used": 1791986686.3820043,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bullish",
-    "top": 4636.2001953125,
-    "bottom": 4623.0,
-    "first_seen": 1792036202.1544087,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
     "top": 4127.193359375,
     "bottom": 4122.39306640625,
     "first_seen": 1792047000.7969754,
@@ -155,6 +85,16 @@
     "top": 4027.6806640625,
     "bottom": 4023.480712890625,
     "first_seen": 1793071191.5866916,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
+  },
+  {
+    "timeframe": "15m",
+    "direction": "bearish",
+    "top": 4023.005126953125,
+    "bottom": 4016.4052734375,
+    "first_seen": 1793255712.7711596,
     "used_count": 0,
     "last_used": null,
     "invalidated": false
