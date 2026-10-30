@@ -2,17 +2,17 @@
   {
     "method": "Liquidity MSNR Method",
     "direction": "bearish",
-    "entry": 4051.9609375,
-    "sl": 4060.189522879464,
-    "tp": 4039.61083984375,
-    "timestamp": 1793199050.4819405
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bearish",
     "entry": 4032.491455078125,
     "sl": 4045.069981166295,
     "tp": 4013.141357421875,
     "timestamp": 1793279129.4578564
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bearish",
+    "entry": 3992.814453125,
+    "sl": 4010.7788434709823,
+    "tp": 3964.114501953125,
+    "timestamp": 1793357404.2746668
   }
 ]
