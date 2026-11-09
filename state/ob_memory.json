@@ -2,16 +2,6 @@
   {
     "timeframe": "15m",
     "direction": "bearish",
-    "top": 4039.558349609375,
-    "bottom": 4029.3583984375,
-    "first_seen": 1792974898.307525,
-    "used_count": 0,
-    "last_used": null,
-    "invalidated": true
-  },
-  {
-    "timeframe": "15m",
-    "direction": "bearish",
     "top": 4027.6806640625,
     "bottom": 4023.480712890625,
     "first_seen": 1793071191.5866916,
@@ -57,6 +47,6 @@
     "first_seen": 1794183586.1560829,
     "used_count": 0,
     "last_used": null,
-    "invalidated": false
+    "invalidated": true
   }
 ]
