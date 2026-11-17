@@ -1,29 +1,5 @@
 [
   {
-    "method": "Method 1 (Combined)",
-    "direction": "bearish",
-    "entry": 3873.3575439453125,
-    "sl": 3874.0577392578125,
-    "tp": 3871.9571533203125,
-    "timestamp": 1794789303.7420206
-  },
-  {
-    "method": "Method 1 (Combined)",
-    "direction": "bearish",
-    "entry": 3864.42138671875,
-    "sl": 3875.12158203125,
-    "tp": 3843.02099609375,
-    "timestamp": 1794795599.192846
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bearish",
-    "entry": 3874.6170654296875,
-    "sl": 3891.381277901786,
-    "tp": 3843.366943359375,
-    "timestamp": 1794809113.5285757
-  },
-  {
     "method": "Liquidity MSNR Method",
     "direction": "bearish",
     "entry": 3859.533203125,
@@ -54,5 +30,13 @@
     "sl": 3868.953386579241,
     "tp": 3844.5391845703125,
     "timestamp": 1794854156.6006973
+  },
+  {
+    "method": "Liquidity MSNR Method",
+    "direction": "bullish",
+    "entry": 3844.018798828125,
+    "sl": 3834.468819754464,
+    "tp": 3859.9686279296875,
+    "timestamp": 1794899123.3803318
   }
 ]
