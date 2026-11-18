@@ -1,13 +1,5 @@
 [
   {
-    "method": "Method 2 (Monthly-Daily-Hourly-5m)",
-    "direction": "bearish",
-    "entry": 3853.7103271484375,
-    "sl": 3863.3602294921875,
-    "tp": 3829.6602783203125,
-    "timestamp": 1794923400.3579257
-  },
-  {
     "method": "Method 1 (Combined)",
     "direction": "bearish",
     "entry": 3788.2867431640625,
@@ -30,5 +22,13 @@
     "sl": 3787.046212332589,
     "tp": 3734.459943498884,
     "timestamp": 1795009786.2375448
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bearish",
+    "entry": 3757.945556640625,
+    "sl": 3765.945556640625,
+    "tp": 3741.945556640625,
+    "timestamp": 1795014303.5375216
   }
 ]
