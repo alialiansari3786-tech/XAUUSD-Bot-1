@@ -88,5 +88,14 @@
     "first_seen": 1795058411.6331065,
     "used_count": 1,
     "last_used": 1795058411.633108
+  },
+  {
+    "timeframe": "1h",
+    "level_type": "A",
+    "direction": "support",
+    "price": 3675.078857421875,
+    "first_seen": 1795117795.9180348,
+    "used_count": 1,
+    "last_used": 1795117795.9180357
   }
 ]
