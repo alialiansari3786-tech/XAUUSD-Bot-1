@@ -2,25 +2,17 @@
   {
     "method": "Liquidity MSNR Method",
     "direction": "bullish",
-    "entry": 3602.9349365234375,
-    "sl": 3591.820643833705,
-    "tp": 3622.3348388671875,
-    "timestamp": 1795440951.9575164
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bullish",
-    "entry": 3618.3714599609375,
-    "sl": 3595.1786760602677,
-    "tp": 3671.3214111328125,
-    "timestamp": 1795445416.0398066
-  },
-  {
-    "method": "Liquidity MSNR Method",
-    "direction": "bullish",
     "entry": 3622.8868408203125,
     "sl": 3607.1011090959823,
     "tp": 3656.336669921875,
     "timestamp": 1795484156.1175723
+  },
+  {
+    "method": "Method 1 (Combined)",
+    "direction": "bearish",
+    "entry": 3622.08837890625,
+    "sl": 3631.03125,
+    "tp": 3542.688232421875,
+    "timestamp": 1795548892.588069
   }
 ]
