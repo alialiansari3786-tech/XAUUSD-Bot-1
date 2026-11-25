@@ -248,5 +248,15 @@
     "used_count": 0,
     "last_used": null,
     "invalidated": false
+  },
+  {
+    "timeframe": "5m",
+    "direction": "bearish",
+    "top": 3822.28173828125,
+    "bottom": 3820.581787109375,
+    "first_seen": 1795596596.331918,
+    "used_count": 0,
+    "last_used": null,
+    "invalidated": false
   }
 ]
