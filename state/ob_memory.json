@@ -287,7 +287,7 @@
     "first_seen": 1795625399.4054563,
     "used_count": 0,
     "last_used": null,
-    "invalidated": false
+    "invalidated": true
   },
   {
     "timeframe": "5m",
